@@ -29,7 +29,9 @@
     "lint": "prettier --check src",
     "start": "react-scripts start",
     "test": "react-scripts test",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "deploy": "scp -r build/* shaffermorrison:/home/shaffermorrison/wordle.shaffer-morrison.com/",
+    "build-deploy": "npm run build && npm run deploy"
   },
   "eslintConfig": {
     "extends": [

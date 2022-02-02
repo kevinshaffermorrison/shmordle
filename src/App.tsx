@@ -62,7 +62,7 @@ function App(firebase: any) {
     '(prefers-color-scheme: dark)'
   ).matches
 
-  const [useDictionary, setUseDictionary] = useState(false)
+  const [useDictionary, setUseDictionary] = useState(true)
   const [guesser, setGuesser] = useState('')
   const [players, setPlayers] = useState<Player[]>([])
   const [allowedGuesses, setAllowedGuesses] = useState(6)
