@@ -27,7 +27,7 @@ import {
   GAME_TITLE,
   WIN_MESSAGES,
   GAME_COPIED_MESSAGE,
-  ABOUT_GAME_MESSAGE,
+  //   ABOUT_GAME_MESSAGE,
   NOT_ENOUGH_LETTERS_MESSAGE,
   WORD_NOT_FOUND_MESSAGE,
   CORRECT_WORD_MESSAGE,
@@ -383,6 +383,22 @@ function App(firebase: any) {
     })
   }
 
+  const share = () => {
+    if (navigator.share) {
+      navigator
+        .share({
+          title: 'Shmordle',
+          text: 'Play me in Shmordle!',
+          url: window.location.href,
+        })
+        .then(() => console.log('Successful share'))
+        .catch((error) => console.log('Error sharing', error))
+    } else if (navigator.clipboard) {
+      navigator.clipboard.writeText(window.location.href)
+      alert('Game link copied to clipboard')
+    }
+  }
+
   return (
     <div className="py-8 max-w-7xl mx-auto sm:px-6 lg:px-8">
       {/* I don't like this */}
@@ -526,12 +542,19 @@ function App(firebase: any) {
         >
           New Game
         </button>
-        <button
+        {/* <button
           type="button"
           className="mx-1 mt-8  px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-indigo-100 bg-indigo-700 hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-200 select-none"
           onClick={() => setIsAboutModalOpen(true)}
         >
           {ABOUT_GAME_MESSAGE}
+        </button> */}
+        <button
+          type="button"
+          className="mx-1 mt-8  px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-indigo-100 bg-indigo-700 hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-200 select-none"
+          onClick={share}
+        >
+          Invite a friend
         </button>
         <button
           type="button"
@@ -541,9 +564,6 @@ function App(firebase: any) {
           Leave Game
         </button>
       </div>
-      {/* <span className="mt-2 dark:text-white items-center justify-center flex mx-auto">
-        {gameId}
-      </span> */}
       <Alert message={NOT_ENOUGH_LETTERS_MESSAGE} isOpen={isNotEnoughLetters} />
       <Alert
         message={WORD_NOT_FOUND_MESSAGE}
