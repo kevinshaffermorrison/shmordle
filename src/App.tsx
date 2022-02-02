@@ -18,6 +18,7 @@ import {
 import { Alert } from './components/alerts/Alert'
 import { Grid } from './components/grid/Grid'
 import { Keyboard } from './components/keyboard/Keyboard'
+import { NameModal } from './components/modals/NameModal'
 import { NewGameModal } from './components/modals/NewGameModal'
 import { AboutModal } from './components/modals/AboutModal'
 import { InfoModal } from './components/modals/InfoModal'
@@ -43,6 +44,11 @@ import './App.css'
 
 const ALERT_TIME_MS = 2000
 
+interface Player {
+  name: string
+  id: string
+}
+
 function App(firebase: any) {
   const params = useParams()
   let gameId: string = params.gameId!
@@ -58,7 +64,7 @@ function App(firebase: any) {
 
   const [useDictionary, setUseDictionary] = useState(false)
   const [guesser, setGuesser] = useState('')
-  const [players, setPlayers] = useState([])
+  const [players, setPlayers] = useState<Player[]>([])
   const [allowedGuesses, setAllowedGuesses] = useState(6)
   const [solution, setSolution] = useState('')
   const [currentGuess, setCurrentGuess] = useState('')
@@ -68,6 +74,7 @@ function App(firebase: any) {
   const [isAboutModalOpen, setIsAboutModalOpen] = useState(false)
   const [isNotEnoughLetters, setIsNotEnoughLetters] = useState(false)
   const [isStatsModalOpen, setIsStatsModalOpen] = useState(false)
+  const [isNameModalOpen, setIsNameModalOpen] = useState(false)
   const [isWordNotFoundAlertOpen, setIsWordNotFoundAlertOpen] = useState(false)
   const [isGameLost, setIsGameLost] = useState(false)
   const [isDarkMode, setIsDarkMode] = useState(
@@ -78,6 +85,15 @@ function App(firebase: any) {
       : false
   )
   const [successAlert, setSuccessAlert] = useState('')
+
+  const [friendName, setFriendName] = useState('')
+  const [myName, setMyName] = useState<string>(() => {
+    let name = localStorage.getItem('name')
+    if (!name) {
+      setIsNameModalOpen(true)
+    }
+    return name || ''
+  })
 
   const [me] = useState<string>(() => {
     let id = localStorage.getItem('id')
@@ -99,14 +115,17 @@ function App(firebase: any) {
 
   // Initialize stuff here.
   useEffect(() => {
+    if (!myName) {
+      return
+    }
     getDoc(doc(db, 'games', gameId)).then((_doc) => {
       if (_doc.exists()) {
         const data = _doc.data()
-        const players: string[] = data.players || []
+        const players: Player[] = data.players || []
 
-        if (!players.includes(me)) {
+        if (!players.find((p) => p.id === me)) {
           if (players.length === 1) {
-            players.push(me)
+            players.push({ id: me, name: myName })
             updateDoc(doc(db, 'games', gameId), {
               players,
             })
@@ -118,6 +137,7 @@ function App(firebase: any) {
       } else {
         console.log('Creating Game')
         setDoc(doc(db, 'games', gameId), {
+          allowedGuesses,
           solution: '',
           isCreatingSolution: true,
           isGameLost: false,
@@ -125,7 +145,7 @@ function App(firebase: any) {
           isNewGameModalOpen: false,
           guesses: [],
           guesser: me,
-          players: [me],
+          players: [{ id: me, name: myName }],
         })
       }
     })
@@ -162,7 +182,7 @@ function App(firebase: any) {
       game()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []) // [] means it will only update when firestore pushes data
+  }, [myName]) // [] means it will only update when firestore pushes data
 
   useEffect(() => {
     if (isDarkMode) {
@@ -178,6 +198,16 @@ function App(firebase: any) {
   }
 
   useEffect(() => {
+    const friend = players.find((p) => p.id !== me)
+    if (friend) setFriendName(friend.name)
+  }, [players])
+
+  useEffect(() => {
+    localStorage.setItem('name', myName)
+  }, [myName])
+
+  useEffect(() => {
+    console.log(guesser, me)
     setIsGuesser(guesser === me)
   }, [guesser, me])
 
@@ -228,6 +258,9 @@ function App(firebase: any) {
 
   // need to put state changes into firebase
   const onEnter = async () => {
+    if (isNameModalOpen) {
+      return
+    }
     if (isCreatingSolution && isGuesser) {
       return
     }
@@ -314,7 +347,7 @@ function App(firebase: any) {
     await updateDoc(ref, {
       solution: '',
       currentGuess: '',
-      guesser: players.find((p) => guesser !== p),
+      guesser: players.find((p) => guesser !== p.id)!.id,
       guesses: [],
       isCreatingSolution: true,
       isGameWon: false,
@@ -335,10 +368,18 @@ function App(firebase: any) {
 
   return (
     <div className="py-8 max-w-7xl mx-auto sm:px-6 lg:px-8">
+      {/* I don't like this */}
+      <div className="flex w-80 mx-auto items-center mb-4 mt-6">
+        <h2 className="text-xl grow text-center font-bold  text-indigo-400  ">
+          {myName}{' '}
+          <small>
+            <small>vs</small>
+          </small>{' '}
+          {friendName || <span className="italic">???</span>}
+        </h2>
+      </div>
       <div className="flex w-80 mx-auto items-center mb-8 mt-12">
-        <h1 className="text-xl grow font-bold dark:text-white">
-          {players.length < 2 ? 'Waiting on a friend!' : GAME_TITLE}
-        </h1>
+        <h1 className="text-xl grow font-bold dark:text-white">{GAME_TITLE}</h1>
         <select
           title="Allowed number of guesses"
           value={allowedGuesses}
@@ -414,6 +455,7 @@ function App(firebase: any) {
         currentGuess={currentGuess}
         solution={solution}
         isGuesser={isGuesser}
+        friendName={friendName}
       />
       <Keyboard
         onChar={onChar}
@@ -449,6 +491,16 @@ function App(firebase: any) {
         isOpen={isAboutModalOpen}
         handleClose={() => setIsAboutModalOpen(false)}
       />
+      <NameModal
+        isOpen={isNameModalOpen}
+        updateMyName={(name) => {
+          setMyName(name)
+          setIsNameModalOpen(false)
+        }}
+        handleClose={() => {
+          myName && setIsNameModalOpen(false)
+        }}
+      />
       <button
         type="button"
         className="mx-auto mt-8 flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 select-none"
@@ -465,12 +517,14 @@ function App(firebase: any) {
         message={
           guesser === me
             ? CORRECT_WORD_MESSAGE(solution)
-            : `Your friend didn't guess ${solution}`
+            : `${friendName} didn't guess ${solution}`
         }
         isOpen={isGameLost}
       />
       <Alert
-        message={guesser !== me ? 'Your friend won!' : successAlert}
+        message={
+          guesser !== me ? `${friendName} figured out the word!` : successAlert
+        }
         isOpen={successAlert !== ''}
         variant={guesser === me ? 'success' : 'info'}
       />

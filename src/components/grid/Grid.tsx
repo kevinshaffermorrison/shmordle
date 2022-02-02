@@ -10,6 +10,7 @@ type Props = {
   isCreatingSolution: boolean
   solution: string
   isGuesser: boolean
+  friendName: string
 }
 
 export const Grid = ({
@@ -19,13 +20,21 @@ export const Grid = ({
   solution,
   isCreatingSolution,
   isGuesser,
+  friendName,
 }: Props) => {
   if (isCreatingSolution) {
     if (isGuesser) {
       return (
         <div className="pb-6">
           <div className=" mx-0.5 text-lg font-bold text-indigo-700 flex items-center  justify-center h-14 mb-1">
-            Your frend is deciding the next word
+            {friendName ? (
+              <div>
+                <span className="italic">{friendName}</span>
+                <span> is deciding the next word</span>
+              </div>
+            ) : (
+              'Waiting for a friend to join!'
+            )}
           </div>
         </div>
       )
