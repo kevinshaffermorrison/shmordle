@@ -28,12 +28,12 @@ export const Grid = ({
         <div className="pb-6">
           <div className=" mx-0.5 text-lg font-bold text-indigo-700 flex items-center  justify-center h-14 mb-1">
             {friendName ? (
-              <div>
+              <div className="animate-bounce">
                 <span className="italic">{friendName}</span>
                 <span> is deciding the next word</span>
               </div>
             ) : (
-              'Waiting for a friend to join!'
+              <div className="animate-pulse">Waiting for a friend to join!</div>
             )}
           </div>
         </div>

@@ -57,6 +57,14 @@ function App(firebase: any) {
     window.location.href += gameId
   }
 
+  window.addEventListener(
+    'beforeunload',
+    async () => {
+      leaveGame()
+    },
+    false
+  )
+
   const db = getFirestore()
   const prefersDarkMode = window.matchMedia(
     '(prefers-color-scheme: dark)'
@@ -200,6 +208,7 @@ function App(firebase: any) {
   useEffect(() => {
     const friend = players.find((p) => p.id !== me)
     if (friend) setFriendName(friend.name)
+    else setFriendName('')
   }, [players, me])
 
   useEffect(() => {
@@ -366,6 +375,14 @@ function App(firebase: any) {
     updateDoc(ref, { allowedGuesses: newAllowedGuesses })
   }
 
+  const leaveGame = async () => {
+    const ref = doc(db, 'games', gameId)
+    const _players = players.filter((p) => p.id !== me)
+    await updateDoc(ref, {
+      players: _players,
+    })
+  }
+
   return (
     <div className="py-8 max-w-7xl mx-auto sm:px-6 lg:px-8">
       {/* I don't like this */}
@@ -501,13 +518,32 @@ function App(firebase: any) {
           myName && setIsNameModalOpen(false)
         }}
       />
-      <button
-        type="button"
-        className="mx-auto mt-8 flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 select-none"
-        onClick={() => setIsAboutModalOpen(true)}
-      >
-        {ABOUT_GAME_MESSAGE}
-      </button>
+      <div className="items-center justify-center flex mx-auto">
+        <button
+          type="button"
+          className="mx-1 mt-8  px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 select-none"
+          onClick={resetGame}
+        >
+          New Game
+        </button>
+        <button
+          type="button"
+          className="mx-1 mt-8  px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-indigo-100 bg-indigo-700 hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-200 select-none"
+          onClick={() => setIsAboutModalOpen(true)}
+        >
+          {ABOUT_GAME_MESSAGE}
+        </button>
+        <button
+          type="button"
+          className="mx-1 mt-8  px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 select-none"
+          onClick={() => leaveGame()}
+        >
+          Leave Game
+        </button>
+      </div>
+      {/* <span className="mt-2 dark:text-white items-center justify-center flex mx-auto">
+        {gameId}
+      </span> */}
       <Alert message={NOT_ENOUGH_LETTERS_MESSAGE} isOpen={isNotEnoughLetters} />
       <Alert
         message={WORD_NOT_FOUND_MESSAGE}
