@@ -18,6 +18,8 @@ export const Cell = ({ value, status }: Props) => {
       'bg-blue-500 text-white border-blue-500': status === 'correct',
       'bg-orange-500 dark:bg-orange-700 text-white border-orange-500 dark:border-orange-700':
         status === 'present',
+      'bg-indigo-500 dark:bg-indigo-700 text-white border-indigo-500 dark:border-indigo-700':
+        status === 'solution',
       'cell-animation': !!value,
     }
   )

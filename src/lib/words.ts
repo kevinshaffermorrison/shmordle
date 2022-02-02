@@ -8,7 +8,7 @@ export const isWordInWordList = (word: string) => {
   )
 }
 
-export const isWinningWord = (word: string) => {
+export const isWinningWord = (solution: string, word: string) => {
   return solution === word
 }
 
@@ -21,10 +21,9 @@ export const getWordOfDay = () => {
   const nextday = (index + 1) * msInDay + epochMs
 
   return {
-    solution: WORDS[index % WORDS.length].toUpperCase(),
     solutionIndex: index,
     tomorrow: nextday,
   }
 }
 
-export const { solution, solutionIndex, tomorrow } = getWordOfDay()
+export const { solutionIndex, tomorrow } = getWordOfDay()

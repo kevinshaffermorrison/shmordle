@@ -4,9 +4,22 @@ import './index.css'
 import App from './App'
 import reportWebVitals from './reportWebVitals'
 
+import { initializeApp } from 'firebase/app'
+
+// Use your config values here.
+const app = initializeApp({
+  apiKey: 'AIzaSyBWGR-qbj6aDYJk1O-1ynve0cbxOAg6D_M',
+  authDomain: 'wordle-6bcb8.firebaseapp.com',
+  projectId: 'wordle-6bcb8',
+  storageBucket: 'wordle-6bcb8.appspot.com',
+  messagingSenderId: '1039377188343',
+  appId: '1:1039377188343:web:27f59c95c767a1bba9daf2',
+  measurementId: 'G-SL9FFYWRKF',
+})
+
 ReactDOM.render(
   <React.StrictMode>
-    <App />
+    <App firebase={app} />
   </React.StrictMode>,
   document.getElementById('root')
 )

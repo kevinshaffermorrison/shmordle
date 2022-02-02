@@ -3,15 +3,28 @@ import { BaseModal } from './BaseModal'
 
 type Props = {
   isOpen: boolean
+  allowedGuesses: number
   handleClose: () => void
 }
 
-export const InfoModal = ({ isOpen, handleClose }: Props) => {
+export const InfoModal = ({ isOpen, allowedGuesses, handleClose }: Props) => {
   return (
     <BaseModal title="How to play" isOpen={isOpen} handleClose={handleClose}>
       <p className="text-sm text-gray-500 dark:text-gray-300">
-        Guess the word in 6 tries. After each guess, the color of the tiles will
-        change to show how close your guess was to the word.
+        One player will submit a 5 letter word.
+      </p>
+
+      <div className="italic flex justify-center mb-1 mt-4">
+        <Cell value="W" status="solution" />
+        <Cell value="E" status="solution" />
+        <Cell value="L" status="solution" />
+        <Cell value="L" status="solution" />
+        <Cell value="S" status="solution" />
+      </div>
+      <p className="text-sm text-gray-500 dark:text-gray-300">
+        The other player then guesses the word in {allowedGuesses} tries. After
+        each guess, the color of the tiles will change to show how close your
+        guess was to the word.
       </p>
 
       <div className="flex justify-center mb-1 mt-4">

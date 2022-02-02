@@ -1,6 +1,4 @@
-import { solution } from './words'
-
-export type CharStatus = 'absent' | 'present' | 'correct'
+export type CharStatus = 'absent' | 'present' | 'correct' | 'solution'
 
 export type CharValue =
   | 'Q'
@@ -31,6 +29,7 @@ export type CharValue =
   | 'M'
 
 export const getStatuses = (
+  solution: string,
   guesses: string[]
 ): { [key: string]: CharStatus } => {
   const charObj: { [key: string]: CharStatus } = {}
@@ -57,7 +56,10 @@ export const getStatuses = (
   return charObj
 }
 
-export const getGuessStatuses = (guess: string): CharStatus[] => {
+export const getGuessStatuses = (
+  solution: string,
+  guess: string
+): CharStatus[] => {
   const splitSolution = solution.split('')
   const splitGuess = guess.split('')
 
