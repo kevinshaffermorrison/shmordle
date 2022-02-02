@@ -2,6 +2,7 @@ import {
   InformationCircleIcon,
   // ChartBarIcon,
   SunIcon,
+  BookOpenIcon,
   // AcademicCapIcon,
 } from '@heroicons/react/outline'
 import { BrowserRouter, Routes, Route, useParams } from 'react-router-dom'
@@ -55,9 +56,10 @@ function App(firebase: any) {
     '(prefers-color-scheme: dark)'
   ).matches
 
+  const [useDictionary, setUseDictionary] = useState(false)
   const [guesser, setGuesser] = useState('')
   const [players, setPlayers] = useState([])
-  const [allowedGuesses] = useState(5)
+  const [allowedGuesses, setAllowedGuesses] = useState(6)
   const [solution, setSolution] = useState('')
   const [currentGuess, setCurrentGuess] = useState('')
   const [isGameWon, setIsGameWon] = useState(false)
@@ -103,11 +105,15 @@ function App(firebase: any) {
         const players: string[] = data.players || []
 
         if (!players.includes(me)) {
-          players.push(me)
-          console.log('Adding player 2')
-          updateDoc(doc(db, 'games', gameId), {
-            players,
-          })
+          if (players.length === 1) {
+            players.push(me)
+            updateDoc(doc(db, 'games', gameId), {
+              players,
+            })
+          } else {
+            const newGameId = uuidv4()
+            window.location.href = `${window.location.origin}/${newGameId}`
+          }
         }
       } else {
         console.log('Creating Game')
@@ -148,6 +154,8 @@ function App(firebase: any) {
         setIsGameWon(data.isGameWon)
         setIsGameLost(data.isGameLost)
         setIsNewGameModalOpen(data.isNewGameModalOpen)
+        setUseDictionary(data.useDictionary)
+        setAllowedGuesses(data.allowedGuesses)
       }
     })
     return () => {
@@ -232,11 +240,13 @@ function App(firebase: any) {
         }, ALERT_TIME_MS)
       }
 
-      if (!isWordInWordList(solution)) {
-        setIsWordNotFoundAlertOpen(true)
-        return setTimeout(() => {
-          setIsWordNotFoundAlertOpen(false)
-        }, ALERT_TIME_MS)
+      if (useDictionary) {
+        if (!isWordInWordList(solution)) {
+          setIsWordNotFoundAlertOpen(true)
+          return setTimeout(() => {
+            setIsWordNotFoundAlertOpen(false)
+          }, ALERT_TIME_MS)
+        }
       }
 
       setIsCreatingSolution(false)
@@ -259,11 +269,13 @@ function App(firebase: any) {
       }, ALERT_TIME_MS)
     }
 
-    if (!isWordInWordList(currentGuess)) {
-      setIsWordNotFoundAlertOpen(true)
-      return setTimeout(() => {
-        setIsWordNotFoundAlertOpen(false)
-      }, ALERT_TIME_MS)
+    if (useDictionary) {
+      if (!isWordInWordList(currentGuess)) {
+        setIsWordNotFoundAlertOpen(true)
+        return setTimeout(() => {
+          setIsWordNotFoundAlertOpen(false)
+        }, ALERT_TIME_MS)
+      }
     }
 
     const winningWord = isWinningWord(solution, currentGuess)
@@ -311,13 +323,58 @@ function App(firebase: any) {
     })
   }
 
+  const updateAllowedGuesses = (event: any) => {
+    console.log(event.target.value)
+    const newAllowedGuesses = event.target.value
+    if (newAllowedGuesses <= guesses.length) {
+      return
+    }
+    const ref = doc(db, 'games', gameId)
+    updateDoc(ref, { allowedGuesses: newAllowedGuesses })
+  }
+
   return (
     <div className="py-8 max-w-7xl mx-auto sm:px-6 lg:px-8">
       <div className="flex w-80 mx-auto items-center mb-8 mt-12">
         <h1 className="text-xl grow font-bold dark:text-white">
           {players.length < 2 ? 'Waiting on a friend!' : GAME_TITLE}
         </h1>
-
+        <select
+          title="Allowed number of guesses"
+          value={allowedGuesses}
+          onChange={updateAllowedGuesses}
+          className="
+            form-select 
+            appearance-none
+            block
+            px-1.5
+            py-.5
+            dark:text-white
+            bg-transparent
+            rounded
+            cursor-pointer
+          "
+        >
+          {guesses.length < 3 && <option value="3">3</option>}
+          {guesses.length < 4 && <option value="4">4</option>}
+          {guesses.length < 5 && <option value="5">5</option>}
+          {guesses.length < 6 && <option value="6">6</option>}
+          {guesses.length < 7 && <option value="7">7</option>}
+          {guesses.length < 8 && <option value="8">8</option>}
+        </select>
+        <div title="Toggle Dictionary">
+          <BookOpenIcon
+            className={
+              !useDictionary
+                ? 'h-6 w-6 cursor-pointer text-gray-700'
+                : 'h-6 w-6 cursor-pointer dark:stroke-white'
+            }
+            onClick={() => {
+              const ref = doc(db, 'games', gameId)
+              updateDoc(ref, { useDictionary: !useDictionary })
+            }}
+          />
+        </div>
         <SunIcon
           className="h-6 w-6 cursor-pointer dark:stroke-white"
           onClick={() => handleDarkMode(!isDarkMode)}
