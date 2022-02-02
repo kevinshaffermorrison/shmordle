@@ -200,7 +200,7 @@ function App(firebase: any) {
   useEffect(() => {
     const friend = players.find((p) => p.id !== me)
     if (friend) setFriendName(friend.name)
-  }, [players])
+  }, [players, me])
 
   useEffect(() => {
     localStorage.setItem('name', myName)
