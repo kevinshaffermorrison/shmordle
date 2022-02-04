@@ -3,15 +3,19 @@ import {
   // ChartBarIcon,
   SunIcon,
   BookOpenIcon,
-  // AcademicCapIcon,
+  BookmarkIcon,
 } from '@heroicons/react/outline'
 import { BrowserRouter, Routes, Route, useParams } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import {
   getFirestore,
   doc,
+  query,
+  collection,
+  where,
   onSnapshot,
   updateDoc,
+  orderBy,
   getDoc,
   setDoc,
 } from 'firebase/firestore'
@@ -19,20 +23,18 @@ import { Alert } from './components/alerts/Alert'
 import { Grid } from './components/grid/Grid'
 import { Keyboard } from './components/keyboard/Keyboard'
 import { NameModal } from './components/modals/NameModal'
+import { OtherGamesModal } from './components/modals/OtherGamesModal'
 import { NewGameModal } from './components/modals/NewGameModal'
 import { AboutModal } from './components/modals/AboutModal'
 import { InfoModal } from './components/modals/InfoModal'
 import { StatsModal } from './components/modals/StatsModal'
 import {
-  GAME_TITLE,
   WIN_MESSAGES,
   GAME_COPIED_MESSAGE,
-  //   ABOUT_GAME_MESSAGE,
   NOT_ENOUGH_LETTERS_MESSAGE,
   WORD_NOT_FOUND_MESSAGE,
   CORRECT_WORD_MESSAGE,
 } from './constants/strings'
-// This solution will need to be updated whenever one person types in a word
 import { isWordInWordList, isWinningWord } from './lib/words'
 import { addStatsForCompletedGame, loadStats } from './lib/stats'
 // import {
@@ -49,6 +51,14 @@ interface Player {
   id: string
 }
 
+export interface Games {
+  myName: string
+  friendName: string
+  myTurn: boolean
+  gameId: string
+  lastModified: string
+}
+
 function App(firebase: any) {
   const params = useParams()
   let gameId: string = params.gameId!
@@ -56,20 +66,23 @@ function App(firebase: any) {
     gameId = uuidv4()
     window.location.href += gameId
   }
-
-  window.addEventListener(
-    'beforeunload',
-    async () => {
-      leaveGame()
-    },
-    false
-  )
-
   const db = getFirestore()
+  const gameRef = doc(db, 'games', gameId)
+
+  // This caused CRAAZY number of updates
+  //   window.addEventListener(
+  //     'beforeunload',
+  //     async () => {
+  //       leaveGame()
+  //     },
+  //     false
+  //   )
+
   const prefersDarkMode = window.matchMedia(
     '(prefers-color-scheme: dark)'
   ).matches
 
+  const [myGames, setMyGames] = useState<Games[]>([])
   const [useDictionary, setUseDictionary] = useState(true)
   const [guesser, setGuesser] = useState('')
   const [players, setPlayers] = useState<Player[]>([])
@@ -77,6 +90,7 @@ function App(firebase: any) {
   const [solution, setSolution] = useState('')
   const [currentGuess, setCurrentGuess] = useState('')
   const [isGameWon, setIsGameWon] = useState(false)
+  const [isOtherGamesModalOpen, setIsOtherGamesModalOpen] = useState(false)
   const [isNewGameModalOpen, setIsNewGameModalOpen] = useState(false)
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false)
   const [isAboutModalOpen, setIsAboutModalOpen] = useState(false)
@@ -126,21 +140,38 @@ function App(firebase: any) {
     if (!myName) {
       return
     }
+    console.log('Here')
     getDoc(doc(db, 'games', gameId)).then((_doc) => {
       if (_doc.exists()) {
+        console.log('Doc Exists')
         const data = _doc.data()
         const players: Player[] = data.players || []
+        const playerIds: string[] = data.playerIds || []
 
-        if (!players.find((p) => p.id === me)) {
-          if (players.length === 1) {
+        if (players.length === 0) {
+          console.log('0 -> 1 users')
+          updateDoc(doc(db, 'games', gameId), {
+            players: [{ id: me, name: myName }],
+            playerIds: [me],
+            lastModified: new Date().toISOString(),
+          })
+        } else if (players.length === 1) {
+          if (!playerIds.includes(me)) {
             players.push({ id: me, name: myName })
+            playerIds.push(me)
+            console.log('1 -> 2 users')
             updateDoc(doc(db, 'games', gameId), {
               players,
+              playerIds,
+              lastModified: new Date().toISOString(),
             })
-          } else {
-            const newGameId = uuidv4()
-            window.location.href = `${window.location.origin}/${newGameId}`
           }
+        } else if (players.length >= 2 && !playerIds.includes(me)) {
+          // probably don't want to just redirect people to a new game
+          // that they aren't expecting...
+          // should also have a good way to create a new game
+          const newGameId = uuidv4()
+          window.location.href = `${window.location.origin}/${newGameId}`
         }
       } else {
         console.log('Creating Game')
@@ -154,14 +185,18 @@ function App(firebase: any) {
           guesses: [],
           guesser: me,
           players: [{ id: me, name: myName }],
+          playerIds: [me],
+          lastModified: new Date().toISOString(),
         })
       }
     })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
+  useEffect(() => {
     const game = onSnapshot(doc(db, 'games', gameId), (doc) => {
       const data = doc.data()
       console.log('GAME UPDATE')
-      // Some logic would be nice here for if the other person wins.
       if (data) {
         // debugger
         // console.log(data)
@@ -190,7 +225,46 @@ function App(firebase: any) {
       game()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [myName]) // [] means it will only update when firestore pushes data
+  }, []) // [] means it will only update when firestore pushes data
+
+  useEffect(() => {
+    console.log('PLAYER GAMES UPDATE')
+    const q = query(
+      collection(db, 'games'),
+      where('playerIds', 'array-contains', me),
+      orderBy('lastModified', 'desc')
+    )
+    const myGamesShapshot = onSnapshot(q, (querySnapshot) => {
+      let _myGames: Games[] = []
+      querySnapshot.forEach((doc) => {
+        const data = doc.data()
+        const friend =
+          data.players.find((p: { id: string; name: string }) => p.id !== me) ||
+          {}
+        if (doc.id !== gameId)
+          _myGames.push({
+            myName: myName,
+            friendName: friend.name,
+            myTurn: data.isCreatingSolution
+              ? data.guesser !== me
+                ? true
+                : false
+              : data.guesser === me
+              ? true
+              : false,
+            gameId: doc.id,
+            lastModified: data.lastModified,
+            // figure out my name, my opponents name, and whose turn it is
+          })
+      })
+      _myGames.sort((a, b) => (a.lastModified < b.lastModified ? 1 : -1))
+      setMyGames(_myGames)
+    })
+    return () => {
+      myGamesShapshot()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [me]) // [] means it will only update when firestore pushes data
 
   useEffect(() => {
     if (isDarkMode) {
@@ -292,10 +366,11 @@ function App(firebase: any) {
       }
 
       setIsCreatingSolution(false)
-      const ref = doc(db, 'games', gameId)
-      await updateDoc(ref, {
+      console.log('Done creating')
+      await updateDoc(gameRef, {
         solution,
         isCreatingSolution: false,
+        lastModified: new Date().toISOString(),
       })
       console.log("Let's start a new game!")
       return
@@ -327,33 +402,37 @@ function App(firebase: any) {
       guesses.length < allowedGuesses &&
       !isGameWon
     ) {
-      const ref = doc(db, 'games', gameId)
-      updateDoc(ref, {
+      console.log('Updating guesses')
+      updateDoc(gameRef, {
         guesses: [...guesses, currentGuess],
+        lastModified: new Date().toISOString(),
       })
       setCurrentGuess('')
 
       if (winningWord) {
         setStats(addStatsForCompletedGame(stats, guesses.length))
-        const ref = doc(db, 'games', gameId)
-        updateDoc(ref, {
+
+        console.log('Updating gameWon')
+        updateDoc(gameRef, {
           isGameWon: true,
+          lastModified: new Date().toISOString(),
         })
       }
       if (guesses.length === allowedGuesses - 1) {
         setStats(addStatsForCompletedGame(stats, guesses.length + 1))
-        const ref = doc(db, 'games', gameId)
-        updateDoc(ref, {
+
+        console.log('Updating gameLost')
+        updateDoc(gameRef, {
           isGameLost: true,
+          lastModified: new Date().toISOString(),
         })
       }
     }
   }
 
   const resetGame = async () => {
-    const ref = doc(db, 'games', gameId)
     console.log('Resetting Game')
-    await updateDoc(ref, {
+    await updateDoc(gameRef, {
       solution: '',
       currentGuess: '',
       guesser: players.find((p) => guesser !== p.id)!.id,
@@ -362,6 +441,7 @@ function App(firebase: any) {
       isGameWon: false,
       isGameLost: false,
       isNewGameModalOpen: false,
+      lastModified: new Date().toISOString(),
     })
   }
 
@@ -371,16 +451,26 @@ function App(firebase: any) {
     if (newAllowedGuesses <= guesses.length) {
       return
     }
-    const ref = doc(db, 'games', gameId)
-    updateDoc(ref, { allowedGuesses: newAllowedGuesses })
+
+    console.log('Updating allowedGuesses')
+    updateDoc(gameRef, {
+      allowedGuesses: newAllowedGuesses,
+      lastModified: new Date().toISOString(),
+    })
   }
 
   const leaveGame = async () => {
-    const ref = doc(db, 'games', gameId)
     const _players = players.filter((p) => p.id !== me)
-    await updateDoc(ref, {
+    const _playerIds = _players.map((p) => p.id)
+
+    console.log('leavingGame')
+    await updateDoc(gameRef, {
       players: _players,
+      playerIds: _playerIds,
+      lastModified: new Date().toISOString(),
     })
+
+    // remove this game from my games
   }
 
   const share = () => {
@@ -402,17 +492,16 @@ function App(firebase: any) {
   return (
     <div className="py-8 max-w-7xl mx-auto sm:px-6 lg:px-8">
       {/* I don't like this */}
-      <div className="flex w-80 mx-auto items-center mb-4 mt-6">
-        <h2 className="text-xl grow text-center font-bold  text-indigo-400  ">
+      <div className="flex w-80 mx-auto items-center mb-4 mt-6"></div>
+      <div className="flex w-80 mx-auto items-center mb-8 mt-12">
+        <h2 className="text-xl grow font-bold  text-orange-400  ">
           {myName}{' '}
           <small>
             <small>vs</small>
           </small>{' '}
           {friendName || <span className="italic">???</span>}
         </h2>
-      </div>
-      <div className="flex w-80 mx-auto items-center mb-8 mt-12">
-        <h1 className="text-xl grow font-bold dark:text-white">{GAME_TITLE}</h1>
+        {/* <h1 className="text-xl grow font-bold dark:text-white">{GAME_TITLE}</h1> */}
         <select
           title="Allowed number of guesses"
           value={allowedGuesses}
@@ -444,14 +533,21 @@ function App(firebase: any) {
                 : 'h-6 w-6 cursor-pointer dark:stroke-white'
             }
             onClick={() => {
-              const ref = doc(db, 'games', gameId)
-              updateDoc(ref, { useDictionary: !useDictionary })
+              console.log('Updating useDictionary')
+              updateDoc(gameRef, {
+                useDictionary: !useDictionary,
+                lastModified: new Date().toISOString(),
+              })
             }}
           />
         </div>
         <SunIcon
           className="h-6 w-6 cursor-pointer dark:stroke-white"
           onClick={() => handleDarkMode(!isDarkMode)}
+        />
+        <BookmarkIcon
+          className="h-6 w-6 cursor-pointer dark:stroke-white"
+          onClick={() => setIsOtherGamesModalOpen(true)}
         />
         <InformationCircleIcon
           className="h-6 w-6 cursor-pointer dark:stroke-white"
@@ -462,25 +558,6 @@ function App(firebase: any) {
           onClick={() => setIsStatsModalOpen(true)}
         /> */}
       </div>
-      {/* <AcademicCapIcon
-        className={
-          isGuesser ? 'h-6 w-6 text-indigo-700' : 'h-6 w-6 dark:stroke-white'
-        }
-        // className="h-6 w-6 cursor-pointer dark:stroke-white"
-        onClick={() => setIsGuesser(!isGuesser)}
-      />
-      <p>{me}</p> */}
-      {/* <div className="text-white">
-        <p>players: {players}</p>
-        <p>me: {me}</p>
-        <p>isGuesser: {isGuesser.toString()}</p>
-        <p>guesser: {guesser}</p>
-        <p>solution: {solution}</p>
-        <p>isCreatingSolution: {isCreatingSolution.toString()}</p>
-        <p>isGameWon: {isGameWon.toString()}</p>
-        <p>isGameLost: {isGameLost.toString()}</p>
-        <p>guesses: {guesses}</p>
-      </div> */}
       <Grid
         allowedGuesses={allowedGuesses}
         isCreatingSolution={isCreatingSolution}
@@ -534,31 +611,43 @@ function App(firebase: any) {
           myName && setIsNameModalOpen(false)
         }}
       />
+      <OtherGamesModal
+        isOpen={isOtherGamesModalOpen}
+        myGames={myGames}
+        handleClose={() => {
+          setIsOtherGamesModalOpen(false)
+        }}
+      />
       <div className="items-center justify-center flex mx-auto">
         <button
+          disabled={!(isGameLost || isGameWon || isNewGameModalOpen)}
           type="button"
-          className="mx-1 mt-8  px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 select-none"
+          className={`${
+            !(isGameLost || isGameWon || isNewGameModalOpen)
+              ? 'disabled:opacity-50'
+              : ''
+          } mx-1 mt-8  px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-orange-700 bg-orange-100 hover:bg-orange-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 select-none`}
           onClick={resetGame}
         >
-          New Game
+          Play Again
         </button>
         {/* <button
           type="button"
-          className="mx-1 mt-8  px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-indigo-100 bg-indigo-700 hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-200 select-none"
+          className="mx-1 mt-8  px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-orange-100 bg-orange-700 hover:bg-orange-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-200 select-none"
           onClick={() => setIsAboutModalOpen(true)}
         >
           {ABOUT_GAME_MESSAGE}
         </button> */}
         <button
           type="button"
-          className="mx-1 mt-8  px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-indigo-100 bg-indigo-700 hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-200 select-none"
+          className="mx-1 mt-8  px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-orange-100 bg-orange-700 hover:bg-orange-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-200 select-none"
           onClick={share}
         >
           Invite a friend
         </button>
         <button
           type="button"
-          className="mx-1 mt-8  px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 select-none"
+          className="mx-1 mt-8  px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-orange-700 bg-orange-100 hover:bg-orange-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 select-none"
           onClick={() => leaveGame()}
         >
           Leave Game
