@@ -82,6 +82,7 @@ function App(firebase: any) {
     '(prefers-color-scheme: dark)'
   ).matches
 
+  const [myTurn, setMyTurn] = useState(false)
   const [myGames, setMyGames] = useState<Games[]>([])
   const [useDictionary, setUseDictionary] = useState(true)
   const [guesser, setGuesser] = useState('')
@@ -236,26 +237,32 @@ function App(firebase: any) {
     )
     const myGamesShapshot = onSnapshot(q, (querySnapshot) => {
       let _myGames: Games[] = []
+      setMyTurn(false)
       querySnapshot.forEach((doc) => {
         const data = doc.data()
         const friend =
           data.players.find((p: { id: string; name: string }) => p.id !== me) ||
           {}
-        if (doc.id !== gameId)
+        if (doc.id !== gameId) {
+          const _myTurn = data.isCreatingSolution
+            ? data.guesser !== me
+              ? true
+              : false
+            : data.guesser === me
+            ? true
+            : false
+          if (_myTurn) {
+            setMyTurn(true)
+          }
           _myGames.push({
             myName: myName,
             friendName: friend.name,
-            myTurn: data.isCreatingSolution
-              ? data.guesser !== me
-                ? true
-                : false
-              : data.guesser === me
-              ? true
-              : false,
+            myTurn: _myTurn,
             gameId: doc.id,
             lastModified: data.lastModified,
             // figure out my name, my opponents name, and whose turn it is
           })
+        }
       })
       _myGames.sort((a, b) => (a.lastModified < b.lastModified ? 1 : -1))
       setMyGames(_myGames)
@@ -546,7 +553,9 @@ function App(firebase: any) {
           onClick={() => handleDarkMode(!isDarkMode)}
         />
         <BookmarkIcon
-          className="h-6 w-6 cursor-pointer dark:stroke-white"
+          className={`${
+            myTurn && 'animate-pulse'
+          } h-6 w-6 cursor-pointer dark:stroke-white`}
           onClick={() => setIsOtherGamesModalOpen(true)}
         />
         <InformationCircleIcon
