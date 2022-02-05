@@ -50,6 +50,7 @@ import { addStatsForCompletedGame, loadStats } from './lib/stats'
 // } from './lib/localStorage'
 import { v4 as uuidv4 } from 'uuid'
 import './App.css'
+import { WordLength } from './lib/words'
 
 const ALERT_TIME_MS = 2000
 
@@ -87,6 +88,7 @@ function App(firebase: any) {
   const [guesser, setGuesser] = useState('')
   const [players, setPlayers] = useState<Player[]>([])
   const [allowedGuesses, setAllowedGuesses] = useState(6)
+  const [wordLength, setWordLength] = useState<WordLength>(5)
   const [solution, setSolution] = useState('')
   const [currentGuess, setCurrentGuess] = useState('')
   const [isGameWon, setIsGameWon] = useState(false)
@@ -140,7 +142,6 @@ function App(firebase: any) {
     if (!myName) {
       return
     }
-    console.log('Here')
     getDoc(doc(db, 'games', gameId)).then((_doc) => {
       if (_doc.exists()) {
         console.log('Doc Exists')
@@ -176,6 +177,7 @@ function App(firebase: any) {
       } else {
         console.log('Creating Game')
         setDoc(doc(db, 'games', gameId), {
+          wordLength,
           allowedGuesses,
           solution: '',
           isCreatingSolution: true,
@@ -219,6 +221,7 @@ function App(firebase: any) {
         setIsNewGameModalOpen(data.isNewGameModalOpen)
         setUseDictionary(data.useDictionary)
         setAllowedGuesses(data.allowedGuesses)
+        setWordLength(data.wordLength)
       }
     })
     return () => {
@@ -296,7 +299,6 @@ function App(firebase: any) {
   }, [myName])
 
   useEffect(() => {
-    console.log(guesser, me)
     setIsGuesser(guesser === me)
   }, [guesser, me])
 
@@ -325,11 +327,12 @@ function App(firebase: any) {
       return
     }
     if (isCreatingSolution) {
-      if (solution.length < 5) setSolution(`${solution}${value}`)
+      if (solution.length < Number(wordLength))
+        setSolution(`${solution}${value}`)
     } else if (
       isGuesser &&
-      currentGuess.length < 5 &&
-      guesses.length < 6 &&
+      currentGuess.length < Number(wordLength) &&
+      guesses.length < allowedGuesses &&
       !isGameWon
     ) {
       setCurrentGuess(`${currentGuess}${value}`)
@@ -354,8 +357,8 @@ function App(firebase: any) {
       return
     }
     if (isCreatingSolution) {
-      if (!(solution.length === 5)) {
-        setIsNotEnoughLetters(true)
+      if (!(solution.length === Number(wordLength))) {
+        debugger
         setIsNotEnoughLetters(true)
         return setTimeout(() => {
           setIsNotEnoughLetters(false)
@@ -363,7 +366,7 @@ function App(firebase: any) {
       }
 
       if (useDictionary) {
-        if (!isWordInWordList(solution)) {
+        if (!isWordInWordList(solution, wordLength)) {
           setIsWordNotFoundAlertOpen(true)
           return setTimeout(() => {
             setIsWordNotFoundAlertOpen(false)
@@ -385,7 +388,7 @@ function App(firebase: any) {
     if (isGameWon || isGameLost) {
       return
     }
-    if (!(currentGuess.length === 5)) {
+    if (!(currentGuess.length === Number(wordLength))) {
       setIsNotEnoughLetters(true)
       return setTimeout(() => {
         setIsNotEnoughLetters(false)
@@ -393,7 +396,7 @@ function App(firebase: any) {
     }
 
     if (useDictionary) {
-      if (!isWordInWordList(currentGuess)) {
+      if (!isWordInWordList(currentGuess, wordLength)) {
         setIsWordNotFoundAlertOpen(true)
         return setTimeout(() => {
           setIsWordNotFoundAlertOpen(false)
@@ -404,7 +407,7 @@ function App(firebase: any) {
     const winningWord = isWinningWord(solution, currentGuess)
 
     if (
-      currentGuess.length === 5 &&
+      currentGuess.length === Number(wordLength) &&
       guesses.length < allowedGuesses &&
       !isGameWon
     ) {
@@ -452,15 +455,23 @@ function App(firebase: any) {
   }
 
   const updateAllowedGuesses = (event: any) => {
-    console.log(event.target.value)
     const newAllowedGuesses = event.target.value
     if (newAllowedGuesses <= guesses.length) {
       return
     }
-
     console.log('Updating allowedGuesses')
     updateDoc(gameRef, {
       allowedGuesses: newAllowedGuesses,
+      lastModified: new Date().toISOString(),
+    })
+  }
+
+  const updateWordLength = (event: any) => {
+    const newWordLength = event.target.value
+
+    console.log('Updating WordLength')
+    updateDoc(gameRef, {
+      wordLength: newWordLength,
       lastModified: new Date().toISOString(),
     })
   }
@@ -513,6 +524,26 @@ function App(firebase: any) {
           </small>{' '}
           {friendName || <span className="italic">???</span>}
         </h2>
+        <select
+          title="Word Length"
+          value={wordLength}
+          onChange={updateWordLength}
+          className="
+            form-select 
+            appearance-none
+            block
+            px-1.5
+            py-.5
+            dark:text-white
+            bg-transparent
+            rounded
+            cursor-pointer
+          "
+        >
+          {guesses.length < 5 && <option value="5">5</option>}
+          {guesses.length < 6 && <option value="6">6</option>}
+          {guesses.length < 7 && <option value="7">7</option>}
+        </select>
         <select
           title="Allowed number of guesses"
           value={allowedGuesses}
@@ -579,6 +610,7 @@ function App(firebase: any) {
         solution={solution}
         isGuesser={isGuesser}
         friendName={friendName}
+        wordLength={wordLength}
       />
       <Keyboard
         onChar={onChar}

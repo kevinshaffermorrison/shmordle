@@ -11,6 +11,7 @@ type Props = {
   solution: string
   isGuesser: boolean
   friendName: string
+  wordLength: number
 }
 
 export const Grid = ({
@@ -21,6 +22,7 @@ export const Grid = ({
   isCreatingSolution,
   isGuesser,
   friendName,
+  wordLength
 }: Props) => {
   if (isCreatingSolution) {
     if (isGuesser) {
@@ -41,7 +43,7 @@ export const Grid = ({
     }
     return (
       <div className="pb-6">
-        <CurrentRow guess={solution} />
+        <CurrentRow wordLength={wordLength} guess={solution} />
       </div>
     )
   } else {
@@ -57,9 +59,9 @@ export const Grid = ({
         {guesses.map((guess, i) => (
           <CompletedRow solution={solution} key={i} guess={guess} />
         ))}
-        {guesses.length < allowedGuesses && <CurrentRow guess={currentGuess} />}
+        {guesses.length < allowedGuesses && <CurrentRow wordLength={wordLength} guess={currentGuess} />}
         {empties.map((_, i) => (
-          <EmptyRow key={i} />
+          <EmptyRow wordLength={wordLength} key={i} />
         ))}
       </div>
     )

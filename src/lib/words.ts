@@ -1,10 +1,12 @@
-import { WORDS } from '../constants/wordlist'
-import { VALIDGUESSES } from '../constants/validGuesses'
+// import { WORDS } from '../constants/wordlist'
+// import { VALIDGUESSES } from '../constants/validGuesses'
+import { VALIDWORDS } from '../constants/validWords'
 
-export const isWordInWordList = (word: string) => {
+export type WordLength = 5 | 6 | 7
+
+export const isWordInWordList = (word: string, wordLength: WordLength) => {
   return (
-    WORDS.includes(word.toLowerCase()) ||
-    VALIDGUESSES.includes(word.toLowerCase())
+    VALIDWORDS[wordLength].includes(word.toLowerCase())
   )
 }
 
