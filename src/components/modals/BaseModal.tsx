@@ -6,10 +6,11 @@ type Props = {
   title: string
   children: React.ReactNode
   isOpen: boolean
+  noClose?: boolean
   handleClose: () => void
 }
 
-export const BaseModal = ({ title, children, isOpen, handleClose }: Props) => {
+export const BaseModal = ({ title, children, isOpen, noClose, handleClose }: Props) => {
   return (
     <Transition.Root show={isOpen} as={Fragment}>
       <Dialog
@@ -47,7 +48,7 @@ export const BaseModal = ({ title, children, isOpen, handleClose }: Props) => {
             leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
           >
             <div className="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-sm sm:w-full sm:p-6 dark:bg-gray-800">
-              <div className="absolute right-4 top-4">
+              <div hidden={noClose} className="absolute right-4 top-4">
                 <XCircleIcon
                   className="h-6 w-6 cursor-pointer dark:stroke-white"
                   onClick={() => handleClose()}

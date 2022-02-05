@@ -1,3 +1,8 @@
+/*
+    TODO: 
+        Settings Modal
+        Add in ability to make 6/7 letter words?
+*/
 import {
   InformationCircleIcon,
   // ChartBarIcon,
@@ -18,11 +23,13 @@ import {
   orderBy,
   getDoc,
   setDoc,
+  deleteDoc,
 } from 'firebase/firestore'
 import { Alert } from './components/alerts/Alert'
 import { Grid } from './components/grid/Grid'
 import { Keyboard } from './components/keyboard/Keyboard'
 import { NameModal } from './components/modals/NameModal'
+import { JoinGameModal } from './components/modals/JoinGameModal'
 import { OtherGamesModal } from './components/modals/OtherGamesModal'
 import { NewGameModal } from './components/modals/NewGameModal'
 import { AboutModal } from './components/modals/AboutModal'
@@ -59,24 +66,25 @@ export interface Games {
   lastModified: string
 }
 
+function LandingApp() {
+  document.documentElement.classList.add('dark')
+  return (
+    <div>
+      <JoinGameModal></JoinGameModal>
+    </div>
+  )
+}
+
 function App(firebase: any) {
   const params = useParams()
-  let gameId: string = params.gameId!
+
+  const [gameId] = useState(params.gameId!)
   if (!gameId) {
-    gameId = uuidv4()
-    window.location.href += gameId
+    // gameId = uuidv4()
+    // window.location.href += gameId
   }
   const db = getFirestore()
   const gameRef = doc(db, 'games', gameId)
-
-  // This caused CRAAZY number of updates
-  //   window.addEventListener(
-  //     'beforeunload',
-  //     async () => {
-  //       leaveGame()
-  //     },
-  //     false
-  //   )
 
   const prefersDarkMode = window.matchMedia(
     '(prefers-color-scheme: dark)'
@@ -171,8 +179,8 @@ function App(firebase: any) {
           // probably don't want to just redirect people to a new game
           // that they aren't expecting...
           // should also have a good way to create a new game
-          const newGameId = uuidv4()
-          window.location.href = `${window.location.origin}/${newGameId}`
+          //   const newGameId = uuidv4()
+          window.location.href = window.location.origin
         }
       } else {
         console.log('Creating Game')
@@ -471,13 +479,18 @@ function App(firebase: any) {
     const _playerIds = _players.map((p) => p.id)
 
     console.log('leavingGame')
-    await updateDoc(gameRef, {
-      players: _players,
-      playerIds: _playerIds,
-      lastModified: new Date().toISOString(),
-    })
 
-    // remove this game from my games
+    if (_playerIds.length === 0) {
+      await deleteDoc(gameRef)
+    } else {
+      await updateDoc(gameRef, {
+        players: _players,
+        playerIds: _playerIds,
+        lastModified: new Date().toISOString(),
+      })
+    }
+
+    window.location.href = window.location.origin
   }
 
   const share = () => {
@@ -497,10 +510,11 @@ function App(firebase: any) {
   }
 
   return (
-    <div className="py-8 max-w-7xl mx-auto sm:px-6 lg:px-8">
-      {/* I don't like this */}
-      <div className="flex w-80 mx-auto items-center mb-4 mt-6"></div>
-      <div className="flex w-80 mx-auto items-center mb-8 mt-12">
+    <div className=" max-w-7xl mx-auto sm:px-6 lg:px-8">
+      <div
+        hidden={!gameId}
+        className="flex w-80 mx-auto items-center mb-6 mt-6"
+      >
         <h2 className="text-xl grow font-bold  text-orange-400  ">
           {myName}{' '}
           <small>
@@ -508,7 +522,6 @@ function App(firebase: any) {
           </small>{' '}
           {friendName || <span className="italic">???</span>}
         </h2>
-        {/* <h1 className="text-xl grow font-bold dark:text-white">{GAME_TITLE}</h1> */}
         <select
           title="Allowed number of guesses"
           value={allowedGuesses}
@@ -690,7 +703,7 @@ function Router(firebase: any) {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<App />} />
+        <Route path="/" element={<LandingApp />} />
         <Route path="/:gameId" element={<App />} />
       </Routes>
     </BrowserRouter>
