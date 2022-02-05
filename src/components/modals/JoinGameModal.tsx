@@ -1,10 +1,15 @@
 import { BaseModal } from './BaseModal'
+import { Games } from '../../App';
 import { useState } from 'react'
 
 import { v4 as uuidv4 } from 'uuid'
 
+type Props = {
+    myGames: Games[]
 
-export const JoinGameModal = () => {
+}
+
+export const JoinGameModal = ({myGames}: Props) => {
   const [gameId, setGameId] = useState('')
   return (
     <BaseModal title="Welcome to Shmordle!" isOpen={true} noClose={true} handleClose={()=>{}}>
@@ -52,6 +57,28 @@ export const JoinGameModal = () => {
                 >
                 Join Game!
             </button>
+            {myGames.length >0 &&
+                <div>
+                <h2 className="my-4 text-xl grow font-bold items-center justify-center flex text-orange-400  ">
+                - Or -
+                </h2>
+                    <h2 className="text-l grow text-center font-bold  dark:text-white">
+                        Join Your Existing Games!
+                    </h2>
+                {myGames.map((_, i) => (
+                    <p key={i}><a 
+                        href={`${window.location.origin}/${_.gameId}`}
+                        className={`${_.myTurn ? 'animate-pulse' : ''} text-l grow text-center font-bold  text-orange-400`}
+                    >
+                        {_.myName}{' '}
+                        <small>
+                        <small>vs</small>
+                        </small>{' '}
+                        {_.friendName || <span className="italic">???</span>}
+                    </a></p>
+                ))}
+                </div>
+            }
       </div>
     </BaseModal>
   )

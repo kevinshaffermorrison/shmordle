@@ -10,6 +10,7 @@ import {
   BookOpenIcon,
   BookmarkIcon,
 } from '@heroicons/react/outline'
+import { LandingApp } from './LandingApp'
 import { BrowserRouter, Routes, Route, useParams } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import {
@@ -29,7 +30,6 @@ import { Alert } from './components/alerts/Alert'
 import { Grid } from './components/grid/Grid'
 import { Keyboard } from './components/keyboard/Keyboard'
 import { NameModal } from './components/modals/NameModal'
-import { JoinGameModal } from './components/modals/JoinGameModal'
 import { OtherGamesModal } from './components/modals/OtherGamesModal'
 import { NewGameModal } from './components/modals/NewGameModal'
 import { AboutModal } from './components/modals/AboutModal'
@@ -64,15 +64,6 @@ export interface Games {
   myTurn: boolean
   gameId: string
   lastModified: string
-}
-
-function LandingApp() {
-  document.documentElement.classList.add('dark')
-  return (
-    <div>
-      <JoinGameModal></JoinGameModal>
-    </div>
-  )
 }
 
 function App(firebase: any) {
