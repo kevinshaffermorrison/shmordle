@@ -4,14 +4,15 @@ import { BaseModal } from './BaseModal'
 type Props = {
   isOpen: boolean
   allowedGuesses: number
+  wordLength: number
   handleClose: () => void
 }
 
-export const InfoModal = ({ isOpen, allowedGuesses, handleClose }: Props) => {
+export const InfoModal = ({ isOpen, wordLength, allowedGuesses, handleClose }: Props) => {
   return (
     <BaseModal title="How to play" isOpen={isOpen} handleClose={handleClose}>
       <p className="text-sm text-gray-500 dark:text-gray-300">
-        One player will submit a 5 letter word.
+        One player will submit a {wordLength} letter word.
       </p>
 
       <div className="italic flex justify-center mb-1 mt-4">

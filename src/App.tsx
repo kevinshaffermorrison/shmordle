@@ -5,10 +5,9 @@
 */
 import {
   InformationCircleIcon,
-  // ChartBarIcon,
-  SunIcon,
-  BookOpenIcon,
   BookmarkIcon,
+  CogIcon,
+  HomeIcon,
 } from '@heroicons/react/outline'
 import { LandingApp } from './LandingApp'
 import { BrowserRouter, Routes, Route, useParams } from 'react-router-dom'
@@ -30,6 +29,7 @@ import { Alert } from './components/alerts/Alert'
 import { Grid } from './components/grid/Grid'
 import { Keyboard } from './components/keyboard/Keyboard'
 import { NameModal } from './components/modals/NameModal'
+import { SettingsModal } from './components/modals/SettingsModal'
 import { OtherGamesModal } from './components/modals/OtherGamesModal'
 import { NewGameModal } from './components/modals/NewGameModal'
 import { AboutModal } from './components/modals/AboutModal'
@@ -94,6 +94,7 @@ function App(firebase: any) {
   const [isGameWon, setIsGameWon] = useState(false)
   const [isOtherGamesModalOpen, setIsOtherGamesModalOpen] = useState(false)
   const [isNewGameModalOpen, setIsNewGameModalOpen] = useState(false)
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false)
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false)
   const [isAboutModalOpen, setIsAboutModalOpen] = useState(false)
   const [isNotEnoughLetters, setIsNotEnoughLetters] = useState(false)
@@ -282,11 +283,6 @@ function App(firebase: any) {
       document.documentElement.classList.remove('dark')
     }
   }, [isDarkMode])
-
-  const handleDarkMode = (isDark: boolean) => {
-    setIsDarkMode(isDark)
-    localStorage.setItem('theme', isDark ? 'dark' : 'light')
-  }
 
   useEffect(() => {
     const friend = players.find((p) => p.id !== me)
@@ -511,6 +507,10 @@ function App(firebase: any) {
     }
   }
 
+  const updateFirebaseDoc = (parameters: any) => {
+    updateDoc(gameRef, parameters)
+  }
+
   return (
     <div className=" max-w-7xl mx-auto sm:px-6 lg:px-8">
       <div
@@ -524,68 +524,9 @@ function App(firebase: any) {
           </small>{' '}
           {friendName || <span className="italic">???</span>}
         </h2>
-        <select
-          title="Word Length"
-          value={wordLength}
-          onChange={updateWordLength}
-          className="
-            form-select 
-            appearance-none
-            block
-            px-1.5
-            py-.5
-            dark:text-white
-            bg-transparent
-            rounded
-            cursor-pointer
-          "
-        >
-          {guesses.length < 5 && <option value="5">5</option>}
-          {guesses.length < 6 && <option value="6">6</option>}
-          {guesses.length < 7 && <option value="7">7</option>}
-        </select>
-        <select
-          title="Allowed number of guesses"
-          value={allowedGuesses}
-          onChange={updateAllowedGuesses}
-          className="
-            form-select 
-            appearance-none
-            block
-            px-1.5
-            py-.5
-            dark:text-white
-            bg-transparent
-            rounded
-            cursor-pointer
-          "
-        >
-          {guesses.length < 3 && <option value="3">3</option>}
-          {guesses.length < 4 && <option value="4">4</option>}
-          {guesses.length < 5 && <option value="5">5</option>}
-          {guesses.length < 6 && <option value="6">6</option>}
-          {guesses.length < 7 && <option value="7">7</option>}
-          {guesses.length < 8 && <option value="8">8</option>}
-        </select>
-        <div title="Toggle Dictionary">
-          <BookOpenIcon
-            className={
-              !useDictionary
-                ? 'h-6 w-6 cursor-pointer text-gray-700'
-                : 'h-6 w-6 cursor-pointer dark:stroke-white'
-            }
-            onClick={() => {
-              console.log('Updating useDictionary')
-              updateDoc(gameRef, {
-                useDictionary: !useDictionary,
-                lastModified: new Date().toISOString(),
-              })
-            }}
-          />
-        </div>
-        <SunIcon
+        <HomeIcon
           className="h-6 w-6 cursor-pointer dark:stroke-white"
-          onClick={() => handleDarkMode(!isDarkMode)}
+          onClick={() => (window.location.href = window.location.origin)}
         />
         <BookmarkIcon
           className={`${
@@ -596,6 +537,10 @@ function App(firebase: any) {
         <InformationCircleIcon
           className="h-6 w-6 cursor-pointer dark:stroke-white"
           onClick={() => setIsInfoModalOpen(true)}
+        />
+        <CogIcon
+          className="h-6 w-6 cursor-pointer dark:stroke-white"
+          onClick={() => setIsSettingsModalOpen(true)}
         />
         {/* <ChartBarIcon
           className="h-6 w-6 cursor-pointer dark:stroke-white"
@@ -627,7 +572,21 @@ function App(firebase: any) {
       <InfoModal
         isOpen={isInfoModalOpen}
         allowedGuesses={allowedGuesses}
+        wordLength={wordLength}
         handleClose={() => setIsInfoModalOpen(false)}
+      />
+      <SettingsModal
+        isOpen={isSettingsModalOpen}
+        allowedGuesses={allowedGuesses}
+        updateAllowedGuesses={updateAllowedGuesses}
+        guesses={guesses}
+        wordLength={wordLength}
+        updateWordLength={updateWordLength}
+        useDictionary={useDictionary}
+        setIsDarkMode={setIsDarkMode}
+        isDarkMode={isDarkMode}
+        updateFirebaseDoc={updateFirebaseDoc}
+        handleClose={() => setIsSettingsModalOpen(false)}
       />
       <StatsModal
         solution={solution}

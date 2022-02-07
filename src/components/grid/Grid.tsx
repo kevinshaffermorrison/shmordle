@@ -43,6 +43,9 @@ export const Grid = ({
     }
     return (
       <div className="pb-6">
+        <div className=" mx-0.5 text-lg font-bold text-orange-700 flex items-center  justify-center h-14 mb-1">
+          <div className="animate-bounce">Submit a word for your friend</div>
+        </div>
         <CurrentRow wordLength={wordLength} guess={solution} />
       </div>
     )
