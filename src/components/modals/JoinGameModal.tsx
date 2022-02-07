@@ -13,7 +13,7 @@ export const JoinGameModal = ({myGames}: Props) => {
   const [gameId, setGameId] = useState('')
   return (
     <BaseModal title="Welcome to Shmordle!" isOpen={true} noClose={true} handleClose={()=>{}}>
-      <div className="items-center justify-center ">
+      <div className="items-center justify-center px-8 pb-4">
         <button
                 type="button"
                 className="mt-4 rounded-md border border-transparent shadow-sm px-4 py-1 bg-orange-600 text-base font-medium text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
