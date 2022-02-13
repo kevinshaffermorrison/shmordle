@@ -1,6 +1,7 @@
 import { BaseModal } from './BaseModal'
 import { Games } from '../../App';
 import { v4 as uuidv4 } from 'uuid'
+import { useNavigate } from 'react-router-dom'
 
 type Props = {
   isOpen: boolean
@@ -9,25 +10,26 @@ type Props = {
 }
 
 export const OtherGamesModal = ({ isOpen, myGames, handleClose }: Props) => {
+  const navigate = useNavigate();
   return (
     <BaseModal title="Other Games" isOpen={isOpen} handleClose={handleClose}>
         <div>
             {myGames.length === 0 &&
-                <p className="text-l grow text-center font-bold  text-orange-400">
-                    You have no other games right now!
-                </p>
+              <p className="text-l grow text-center font-bold  text-orange-400">
+                  You have no other games right now!
+              </p>
             }
             {myGames.map((_, i) => (
-                <p key={i}><a 
-                    href={`${window.location.origin}/${_.gameId}`}
-                    className={`${_.myTurn ? 'animate-pulse' : ''} text-l grow text-center font-bold  text-orange-400`}
-                >
-                    {_.myName}{' '}
-                    <small>
-                    <small>vs</small>
-                    </small>{' '}
-                    {_.friendName || <span className="italic">???</span>}
-                </a></p>
+              <p key={i}
+                  onClick={() => {navigate(`/${_.gameId}`)}}
+                  className={`${_.myTurn ? 'animate-pulse' : ''} cursor-pointer text-l grow text-center font-bold  text-orange-400`}
+              >
+                {_.myName}{' '}
+                <small>
+                <small>vs</small>
+                </small>{' '}
+                {_.friendName || <span className="italic">???</span>}
+              </p>
             ))}
         <button
             type="button"

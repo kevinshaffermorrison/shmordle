@@ -1,6 +1,7 @@
 import { BaseModal } from './BaseModal'
 import { Games } from '../../App';
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 import { v4 as uuidv4 } from 'uuid'
 
@@ -10,6 +11,7 @@ type Props = {
 }
 
 export const JoinGameModal = ({myGames}: Props) => {
+  const navigate = useNavigate();
   const [gameId, setGameId] = useState('')
   return (
     <BaseModal title="Welcome to Shmordle!" isOpen={true} noClose={true} handleClose={()=>{}}>
@@ -18,7 +20,8 @@ export const JoinGameModal = ({myGames}: Props) => {
                 type="button"
                 className="mt-4 rounded-md border border-transparent shadow-sm px-4 py-1 bg-orange-600 text-base font-medium text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
                 onClick={() => {
-                    window.location.href = `${window.location.origin}/${uuidv4()}`;
+                    navigate(`/${uuidv4()}`);
+                    // window.location.href = `${window.location.origin}/${uuidv4()}`;
                 }}
             >
                 New Game?
@@ -45,14 +48,16 @@ export const JoinGameModal = ({myGames}: Props) => {
                 type="text"
                 value={gameId}
                 onChange={(event) => {
-                    setGameId(event.target.value)
+                  setGameId(event.target.value)
                 }}
             />
             <button
                 type="button"
                 className="mt-2 rounded-md border border-transparent shadow-sm px-4 py-2 bg-orange-600 text-base font-medium text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
                 onClick={() => {
-                    window.location.href = `${window.location.origin}/${gameId}`;
+
+                  navigate(`/${gameId}`);
+                  // window.location.href = `${window.location.origin}/${gameId}`;
                 }}
                 >
                 Join Game!
@@ -66,16 +71,16 @@ export const JoinGameModal = ({myGames}: Props) => {
                         Join Your Existing Games!
                     </h2>
                 {myGames.map((_, i) => (
-                    <p key={i}><a 
-                        href={`${window.location.origin}/${_.gameId}`}
-                        className={`${_.myTurn ? 'animate-pulse' : ''} text-l grow text-center font-bold  text-orange-400`}
+                    <p key={i}
+                        onClick={() => {navigate(`/${_.gameId}`)}}
+                        className={`${_.myTurn ? 'animate-pulse' : ''} cursor-pointer text-l grow text-center font-bold  text-orange-400`}
                     >
                         {_.myName}{' '}
                         <small>
                         <small>vs</small>
                         </small>{' '}
                         {_.friendName || <span className="italic">???</span>}
-                    </a></p>
+                    </p>
                 ))}
                 </div>
             }

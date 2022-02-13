@@ -1,16 +1,22 @@
 /*
     TODO: 
-        Settings Modal
-        Add in ability to make 6/7 letter words?
+      Cleanup some unused code around other games
+      Make the Leave Game Modal the same style
 */
 import {
   InformationCircleIcon,
-  BookmarkIcon,
+  // BookmarkIcon,
   CogIcon,
   HomeIcon,
 } from '@heroicons/react/outline'
 import { LandingApp } from './LandingApp'
-import { BrowserRouter, Routes, Route, useParams } from 'react-router-dom'
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  useParams,
+  useNavigate,
+} from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import {
   getFirestore,
@@ -30,7 +36,7 @@ import { Grid } from './components/grid/Grid'
 import { Keyboard } from './components/keyboard/Keyboard'
 import { NameModal } from './components/modals/NameModal'
 import { SettingsModal } from './components/modals/SettingsModal'
-import { OtherGamesModal } from './components/modals/OtherGamesModal'
+// import { OtherGamesModal } from './components/modals/OtherGamesModal'
 import { NewGameModal } from './components/modals/NewGameModal'
 import { AboutModal } from './components/modals/AboutModal'
 import { InfoModal } from './components/modals/InfoModal'
@@ -68,6 +74,7 @@ export interface Games {
 }
 
 function App(firebase: any) {
+  const navigate = useNavigate()
   const params = useParams()
 
   const [gameId] = useState(params.gameId!)
@@ -83,7 +90,7 @@ function App(firebase: any) {
   ).matches
 
   const [myTurn, setMyTurn] = useState(false)
-  const [myGames, setMyGames] = useState<Games[]>([])
+  // const [myGames, setMyGames] = useState<Games[]>([])
   const [useDictionary, setUseDictionary] = useState(true)
   const [guesser, setGuesser] = useState('')
   const [players, setPlayers] = useState<Player[]>([])
@@ -92,7 +99,7 @@ function App(firebase: any) {
   const [solution, setSolution] = useState('')
   const [currentGuess, setCurrentGuess] = useState('')
   const [isGameWon, setIsGameWon] = useState(false)
-  const [isOtherGamesModalOpen, setIsOtherGamesModalOpen] = useState(false)
+  // const [isOtherGamesModalOpen, setIsOtherGamesModalOpen] = useState(false)
   const [isNewGameModalOpen, setIsNewGameModalOpen] = useState(false)
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false)
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false)
@@ -173,7 +180,8 @@ function App(firebase: any) {
           // that they aren't expecting...
           // should also have a good way to create a new game
           //   const newGameId = uuidv4()
-          window.location.href = window.location.origin
+          navigate('/')
+          // window.location.href = window.location.origin
         }
       } else {
         console.log('Creating Game')
@@ -268,7 +276,7 @@ function App(firebase: any) {
         }
       })
       _myGames.sort((a, b) => (a.lastModified < b.lastModified ? 1 : -1))
-      setMyGames(_myGames)
+      // setMyGames(_myGames)
     })
     return () => {
       myGamesShapshot()
@@ -472,6 +480,10 @@ function App(firebase: any) {
   }
 
   const leaveGame = async () => {
+    // eslint-disable-next-line no-restricted-globals
+    if (confirm('Are you sure you want to leave?') === false) {
+      return
+    }
     const _players = players.filter((p) => p.id !== me)
     const _playerIds = _players.map((p) => p.id)
 
@@ -486,8 +498,8 @@ function App(firebase: any) {
         lastModified: new Date().toISOString(),
       })
     }
-
-    window.location.href = window.location.origin
+    navigate('/')
+    // window.location.href = window.location.origin
   }
 
   const share = () => {
@@ -524,15 +536,18 @@ function App(firebase: any) {
           {friendName || <span className="italic">???</span>}
         </h2>
         <HomeIcon
-          className="h-6 w-6 cursor-pointer dark:stroke-white"
-          onClick={() => (window.location.href = window.location.origin)}
+          className={`${
+            myTurn && 'animate-pulse'
+          } h-6 w-6 cursor-pointer dark:stroke-white`}
+          // className="h-6 w-6 cursor-pointer dark:stroke-white"
+          onClick={() => navigate('/')}
         />
-        <BookmarkIcon
+        {/* <BookmarkIcon
           className={`${
             myTurn && 'animate-pulse'
           } h-6 w-6 cursor-pointer dark:stroke-white`}
           onClick={() => setIsOtherGamesModalOpen(true)}
-        />
+        /> */}
         <InformationCircleIcon
           className="h-6 w-6 cursor-pointer dark:stroke-white"
           onClick={() => setIsInfoModalOpen(true)}
@@ -547,6 +562,7 @@ function App(firebase: any) {
         /> */}
       </div>
       <Grid
+        resetGame={resetGame}
         allowedGuesses={allowedGuesses}
         isCreatingSolution={isCreatingSolution}
         guesses={guesses}
@@ -614,13 +630,13 @@ function App(firebase: any) {
           myName && setIsNameModalOpen(false)
         }}
       />
-      <OtherGamesModal
+      {/* <OtherGamesModal
         isOpen={isOtherGamesModalOpen}
         myGames={myGames}
         handleClose={() => {
           setIsOtherGamesModalOpen(false)
         }}
-      />
+      /> */}
       <div className="items-center justify-center flex mx-auto">
         <button
           disabled={!(isGameLost || isGameWon || isNewGameModalOpen)}

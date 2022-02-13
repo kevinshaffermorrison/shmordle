@@ -4,6 +4,7 @@ import { CurrentRow } from './CurrentRow'
 import { EmptyRow } from './EmptyRow'
 
 type Props = {
+  resetGame: () => void,
   allowedGuesses: number
   guesses: string[]
   currentGuess: string
@@ -15,6 +16,7 @@ type Props = {
 }
 
 export const Grid = ({
+  resetGame,
   guesses,
   currentGuess,
   allowedGuesses,
@@ -44,7 +46,9 @@ export const Grid = ({
     return (
       <div className="pb-6">
         <div className=" mx-0.5 text-lg font-bold text-orange-700 flex items-center  justify-center h-14 mb-1">
-          <div className="animate-bounce">Submit a word for your friend</div>
+          <div className="animate-bounce">Submit a word for your friend or 
+            <i className="cursor-pointer text-orange-400" onClick={()=>resetGame()}>&nbsp;Pass.</i>
+          </div>
         </div>
         <CurrentRow wordLength={wordLength} guess={solution} />
       </div>
