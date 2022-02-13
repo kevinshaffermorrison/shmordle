@@ -8,6 +8,7 @@ import {
   // BookmarkIcon,
   CogIcon,
   HomeIcon,
+  ChartBarIcon,
 } from '@heroicons/react/outline'
 import { LandingApp } from './LandingApp'
 import {
@@ -37,6 +38,7 @@ import { Keyboard } from './components/keyboard/Keyboard'
 import { NameModal } from './components/modals/NameModal'
 import { SettingsModal } from './components/modals/SettingsModal'
 // import { OtherGamesModal } from './components/modals/OtherGamesModal'
+import { HistoryModal } from './components/modals/HistoryModal'
 import { NewGameModal } from './components/modals/NewGameModal'
 import { AboutModal } from './components/modals/AboutModal'
 import { InfoModal } from './components/modals/InfoModal'
@@ -59,6 +61,17 @@ import './App.css'
 import { WordLength } from './lib/words'
 
 const ALERT_TIME_MS = 2000
+
+export interface PreviousGame {
+  solution?: string
+  allowedGuesses?: number
+  wordLength?: number
+  guesses?: string[]
+  guesser?: string
+  guesserName?: string
+  wordCreator?: string
+  success?: boolean
+}
 
 interface Player {
   name: string
@@ -99,7 +112,9 @@ function App(firebase: any) {
   const [solution, setSolution] = useState('')
   const [currentGuess, setCurrentGuess] = useState('')
   const [isGameWon, setIsGameWon] = useState(false)
+  const [previousGame, setPreviousGame] = useState({})
   // const [isOtherGamesModalOpen, setIsOtherGamesModalOpen] = useState(false)
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false)
   const [isNewGameModalOpen, setIsNewGameModalOpen] = useState(false)
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false)
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false)
@@ -231,6 +246,7 @@ function App(firebase: any) {
         setUseDictionary(data.useDictionary)
         setAllowedGuesses(data.allowedGuesses)
         setWordLength(data.wordLength)
+        setPreviousGame(data.previousGame)
       }
     })
     return () => {
@@ -416,8 +432,9 @@ function App(firebase: any) {
       !isGameWon
     ) {
       console.log('Updating guesses')
+      const _newGuesses = [...guesses, currentGuess]
       updateDoc(gameRef, {
-        guesses: [...guesses, currentGuess],
+        guesses: _newGuesses,
         lastModified: new Date().toISOString(),
       })
       setCurrentGuess('')
@@ -429,6 +446,16 @@ function App(firebase: any) {
         updateDoc(gameRef, {
           isGameWon: true,
           lastModified: new Date().toISOString(),
+          previousGame: {
+            solution,
+            allowedGuesses,
+            wordLength,
+            guesses: _newGuesses,
+            guesser,
+            guesserName: isGuesser ? myName : friendName,
+            wordCreator: isGuesser ? friendName : myName,
+            success: true,
+          },
         })
       } else if (guesses.length === allowedGuesses - 1) {
         setStats(addStatsForCompletedGame(stats, guesses.length + 1))
@@ -437,6 +464,16 @@ function App(firebase: any) {
         updateDoc(gameRef, {
           isGameLost: true,
           lastModified: new Date().toISOString(),
+          previousGame: {
+            solution,
+            allowedGuesses,
+            wordLength,
+            guesses: _newGuesses,
+            guesser,
+            guesserName: isGuesser ? myName : friendName,
+            wordCreator: isGuesser ? friendName : myName,
+            success: false,
+          },
         })
       }
     }
@@ -548,6 +585,10 @@ function App(firebase: any) {
           } h-6 w-6 cursor-pointer dark:stroke-white`}
           onClick={() => setIsOtherGamesModalOpen(true)}
         /> */}
+        <ChartBarIcon
+          className="h-6 w-6 cursor-pointer dark:stroke-white"
+          onClick={() => setIsHistoryModalOpen(true)}
+        />
         <InformationCircleIcon
           className="h-6 w-6 cursor-pointer dark:stroke-white"
           onClick={() => setIsInfoModalOpen(true)}
@@ -583,6 +624,11 @@ function App(firebase: any) {
         isOpen={isNewGameModalOpen}
         handleClose={() => setIsNewGameModalOpen(false)}
         newGame={resetGame}
+      />
+      <HistoryModal
+        isOpen={isHistoryModalOpen}
+        handleClose={() => setIsHistoryModalOpen(false)}
+        previousGame={previousGame}
       />
       <InfoModal
         isOpen={isInfoModalOpen}
