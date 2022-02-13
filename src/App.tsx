@@ -194,7 +194,7 @@ function App(firebase: any) {
       }
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [myName])
 
   useEffect(() => {
     const game = onSnapshot(doc(db, 'games', gameId), (doc) => {
@@ -319,7 +319,7 @@ function App(firebase: any) {
 
   // Keypress
   const onChar = (value: string) => {
-    if (isCreatingSolution && isGuesser) {
+    if ((isCreatingSolution && isGuesser) || isNameModalOpen) {
       return
     }
     if (isCreatingSolution) {
@@ -422,8 +422,7 @@ function App(firebase: any) {
           isGameWon: true,
           lastModified: new Date().toISOString(),
         })
-      }
-      if (guesses.length === allowedGuesses - 1) {
+      } else if (guesses.length === allowedGuesses - 1) {
         setStats(addStatsForCompletedGame(stats, guesses.length + 1))
 
         console.log('Updating gameLost')
