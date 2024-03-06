@@ -1,5 +1,5 @@
 {
-  "name": "wordle",
+  "name": "shmordle",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -30,7 +30,7 @@
     "start": "react-scripts start",
     "test": "react-scripts test",
     "prepare": "husky install",
-    "deploy": "scp -r build/* shaffermorrison:/home/shaffermorrison/wordle.shaffer-morrison.com/",
+    "deploy": "scp -r build/* shaffermorrison:/home/shaffermorrison/shmordle.com/",
     "build-deploy": "npm run build && npm run deploy"
   },
   "eslintConfig": {

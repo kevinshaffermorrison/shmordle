@@ -8,13 +8,12 @@ import { initializeApp } from 'firebase/app'
 
 // Use your config values here.
 const app = initializeApp({
-  apiKey: 'AIzaSyBWGR-qbj6aDYJk1O-1ynve0cbxOAg6D_M',
-  authDomain: 'wordle-6bcb8.firebaseapp.com',
-  projectId: 'wordle-6bcb8',
-  storageBucket: 'wordle-6bcb8.appspot.com',
-  messagingSenderId: '1039377188343',
-  appId: '1:1039377188343:web:27f59c95c767a1bba9daf2',
-  measurementId: 'G-SL9FFYWRKF',
+  apiKey: 'AIzaSyBoJhXbI2-lzdJNyvqHxHJ7Q2aPAjuBNGY',
+  authDomain: 'shmordle.firebaseapp.com',
+  projectId: 'shmordle',
+  storageBucket: 'shmordle.appspot.com',
+  messagingSenderId: '1040439316460',
+  appId: '1:1040439316460:web:1acc7acb380f80b143fac9',
 })
 
 ReactDOM.render(
